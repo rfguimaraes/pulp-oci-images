@@ -1,0 +1,14 @@
+galaxy_info:
+    role_name: pulp_quadlet
+    author: community
+    description: Deploy Pulp as a rootless Podman Quadlet service managed by systemd
+    license: GPLv2
+    min_ansible_version: "2.14"
+    platforms:
+        - name: Fedora
+          versions:
+              - all
+        - name: EL
+          versions:
+              - "9"
+              - "10"

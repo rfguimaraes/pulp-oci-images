@@ -1,0 +1,11 @@
+[Unit]
+Description=Pulp stack (main target)
+Wants=pulp-migration.service pulp-signing-key.service pulp-set-init-password.service pulpnet-network.service pulp-web.service
+Wants=pulp-apis.target pulp-contents.target pulp-workers.target
+
+After=network-online.target mnt-pulp.mount pulp-migration.service pulp-signing-key.service pulp-set-init-password.service pulpnet-network.service pulp-workers.target
+
+Requires=mnt-pulp.mount pulp-web.service
+
+[Install]
+WantedBy=default.target

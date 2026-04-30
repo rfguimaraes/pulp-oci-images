@@ -1,0 +1,7 @@
+[Unit]
+Description=Pulp user-defined network
+PartOf=pulp.target
+
+[Network]
+NetworkName=pulpnet
+Driver=bridge

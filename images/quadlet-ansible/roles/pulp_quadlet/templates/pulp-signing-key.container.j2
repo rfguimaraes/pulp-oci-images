@@ -1,0 +1,27 @@
+[Unit]
+Description=Pulp add signing service (oneshot)
+Requires=pulp-migration.service
+After=pulp-migration.service
+PartOf=pulp.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Restart=no
+
+[Container]
+Image={{ image_source }}/pulp/pulp-minimal:{{ pulp_version }}
+Exec=add_signing_service.sh
+User=700
+LogDriver=journald
+LogOpt=tag={{ '{{.Name}}' }}
+UserNS=keep-id:uid=700,gid=700
+Network={{ pulp_quadlet_network_name }}.network
+
+# Volumes
+Volume={{ pulp_host_dir }}/assets/settings.py:/etc/pulp/settings.py:z
+Volume={{ pulp_host_dir }}/assets/certs:/etc/pulp/certs:z
+Volume={{ pulp_host_nfs_mountpoint }}:/var/lib/pulp:z
+
+[Install]
+WantedBy=pulp.target

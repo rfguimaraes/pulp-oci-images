@@ -1,0 +1,34 @@
+[Unit]
+Description=Pulp Web
+PartOf=pulp.target
+After=pulp-set-init-password.service
+After={% for i in range(1, pulp_api_replicas + 1) -%}
+pulp-api@{{ i }}.service{% if not loop.last %} {% endif %}
+{%- endfor %}
+
+After={% for i in range(1, pulp_content_replicas + 1) -%}
+pulp-content@{{ i }}.service{% if not loop.last %} {% endif %}
+{%- endfor %}
+
+Requires=pulp-set-init-password.service
+
+[Service]
+Restart=on-failure
+RestartSec=60s
+
+[Container]
+Image={{ image_source }}/pulp/pulp-web:{{ pulp_version }}
+User=0
+Exec=/usr/bin/nginx.sh
+LogDriver=journald
+LogOpt=tag={{ '{{.Name}}' }}
+PublishPort={{ pulp_port }}:8080
+Network=pulpnet.network
+
+# Volumes
+Volume={{ pulp_host_dir }}/assets/bin/nginx.sh:/usr/bin/nginx.sh:Z
+Volume={{ pulp_host_dir }}/assets/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:Z
+Volume={{ pulp_host_dir }}/assets/certs:/etc/pulp/certs:z
+
+[Install]
+WantedBy=pulp.target

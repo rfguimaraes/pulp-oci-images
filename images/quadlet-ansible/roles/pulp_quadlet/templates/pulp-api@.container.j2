@@ -1,0 +1,41 @@
+[Unit]
+Description=Pulp API (%i)
+PartOf=pulp-apis.target
+BindsTo=pulp-apis.target
+After=pulp-set-init-password.service
+Requires=pulp-set-init-password.service
+
+[Service]
+Restart=on-failure
+RestartSec=60s
+CPUQuota=200%
+MemoryHigh=4G
+MemoryMax=6G
+MemorySwapMax=16G
+
+[Container]
+Image={{ image_source }}/pulp/pulp-minimal:{{ pulp_version }}
+Exec=pulp-api
+User=700
+HostName=pulp-api-%i-{{ inventory_hostname }}
+StopTimeout=120
+LogDriver=journald
+LogOpt=tag={{ '{{.Name}}' }}
+UserNS=keep-id:uid=700,gid=700
+Environment=PULP_GUNICORN_TIMEOUT={{ pulp_gunicorn_timeout }}
+
+Network=pulpnet.network:alias=pulp_api_{{ inventory_hostname }}
+
+# Healthcheck
+HealthCmd=readyz.py /pulp/api/v3/status/
+HealthInterval=10s
+HealthRetries=5
+HealthTimeout=5s
+
+# Volumes
+Volume={{ pulp_host_dir }}/assets/settings.py:/etc/pulp/settings.py:z
+Volume={{ pulp_host_dir }}/assets/certs:/etc/pulp/certs:z
+Volume={{ pulp_host_nfs_mountpoint }}:/var/lib/pulp:z
+
+[Install]
+WantedBy=pulp-apis.target

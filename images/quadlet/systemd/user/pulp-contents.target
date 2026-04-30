@@ -1,0 +1,9 @@
+[Unit]
+Description=Pulp content target
+After=pulp-set-init-password.service
+Requires=pulp-set-init-password.service
+PartOf=pulp.target
+Wants=pulp-content@1.service pulp-content@2.service
+
+[Install]
+WantedBy=pulp.target

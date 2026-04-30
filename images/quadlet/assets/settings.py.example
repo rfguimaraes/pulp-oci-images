@@ -1,0 +1,41 @@
+# Pulp settings.py example for a quadlet-based rootless Podman deployment.
+# Copy to settings.py and fill in your values.
+
+SECRET_KEY = "<generate-with: python3 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'>"
+
+CONTENT_ORIGIN = "http://<your-pulp-host>:8080"
+
+DATABASES = {
+    "default": {
+        "HOST": "<db-host>",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "pulp",
+        "USER": "pulp",
+        "PASSWORD": "<db-password>",
+        "PORT": "5432",
+        "CONN_MAX_AGE": 0,
+        "OPTIONS": {"sslmode": "prefer"},
+    },
+}
+
+CACHE_ENABLED = True
+REDIS_HOST = "<redis-host>"
+REDIS_PORT = 6379
+REDIS_PASSWORD = ""
+
+ANSIBLE_API_HOSTNAME = "http://pulp_api:24817"
+ANSIBLE_CONTENT_HOSTNAME = "http://pulp_content:24816/pulp/content"
+
+ALLOWED_IMPORT_PATHS = ["/tmp"]
+ALLOWED_EXPORT_PATHS = ["/tmp"]
+
+TOKEN_SERVER = "http://<your-pulp-host>:8080/token/"
+TOKEN_AUTH_DISABLED = False
+TOKEN_SIGNATURE_ALGORITHM = "ES256"
+PUBLIC_KEY_PATH = "/etc/pulp/certs/container_auth_public_key.pem"
+PRIVATE_KEY_PATH = "/etc/pulp/certs/container_auth_private_key.pem"
+
+DATABASES_FIELDS_SYMMETRIC_KEY = "/etc/pulp/certs/database_fields.symmetric.key"
+
+ANALYTICS = False
+STATIC_ROOT = "/var/lib/operator/static/"

@@ -1,0 +1,66 @@
+# Based on https://github.com/pulp/pulp-oci-images/blob/main/images/compose/assets/nginx/nginx.conf.template
+# The $NAMESERVER variable is substituted at container startup by nginx.sh.
+# $pulp_api and $pulp_content use Podman network aliases, resolved via the
+# internal DNS resolver so nginx picks up new instances automatically.
+error_log /dev/stdout info;
+worker_processes 1;
+events {
+    worker_connections 1024; # increase if you have lots of clients
+    accept_mutex off; # set to 'on' if nginx worker_processes > 1
+}
+
+http {
+    access_log /dev/stdout;
+    include mime.types;
+    default_type application/octet-stream;
+    sendfile on;
+    types_hash_max_size 4096;
+
+    server {
+        resolver $NAMESERVER valid=10s;
+
+        set $pulp_api pulp_api_{{ inventory_hostname }};
+        set $pulp_content pulp_content_{{ inventory_hostname }};
+
+        listen 8080 default_server deferred;
+        listen [::]:8080 default_server deferred;
+        server_name $hostname;
+        client_max_body_size 10m;
+        keepalive_timeout 5;
+        root /opt/app-root/src;
+
+        location /pulp/content/ {
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://$pulp_content:24816;
+        }
+
+        location /pulp/api/v3/ {
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://$pulp_api:24817;
+        }
+
+        location /auth/login/ {
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://$pulp_api:24817;
+        }
+
+        include /etc/nginx/pulp/*.conf;
+
+        location / {
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://$pulp_api:24817;
+        }
+    }
+}

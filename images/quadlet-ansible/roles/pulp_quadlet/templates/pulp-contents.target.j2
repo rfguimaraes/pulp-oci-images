@@ -1,0 +1,12 @@
+[Unit]
+Description=Pulp content target
+After=pulp-set-init-password.service
+Requires=pulp-set-init-password.service
+PartOf=pulp.target
+Wants={% for i in range(1, pulp_content_replicas + 1) -%}
+pulp-content@{{ i }}.service{% if not loop.last %} {% endif %}
+{%- endfor %}
+
+
+[Install]
+WantedBy=pulp.target

@@ -1,0 +1,155 @@
+---
+- name: Fail if not a RedHat-based system
+  ansible.builtin.fail:
+      msg: "This role only supports RedHat-based systems. Found: {{ ansible_os_family }}"
+  when: ansible_os_family != "RedHat"
+
+- name: Install NFS utilities
+  ansible.builtin.dnf:
+      name: nfs-utils
+      state: present
+
+- name: Ensure mountpoint for NFS exists
+  ansible.builtin.file:
+      path: "{{ pulp_host_nfs_mountpoint }}"
+      state: directory
+      owner: pulp
+      group: pulp
+      mode: "2771"
+  notify: Restart pulp mount
+
+- name: Apply systemd NFS mount unit
+  ansible.builtin.template:
+      dest: /etc/systemd/system/mnt-pulp.mount
+      src: pulp-nfs.mount.j2
+      mode: "0644"
+  notify: Restart pulp mount
+
+- name: Ensure NFS mount is active
+  ansible.builtin.systemd:
+      name: mnt-pulp.mount
+      state: started
+      enabled: true
+      daemon_reload: true
+
+- name: Ensure host directories exist
+  ansible.builtin.file:
+      path: "{{ pulp_host_dir }}/{{ item }}"
+      state: directory
+      owner: pulp
+      group: pulp
+      mode: "0755"
+  loop:
+      - assets/bin
+      - assets/nginx
+      - assets/certs
+
+- name: Copy static assets
+  ansible.builtin.copy:
+      dest: "{{ pulp_host_dir }}/assets/bin/{{ item }}"
+      src: "assets/bin/{{ item }}"
+      owner: pulp
+      group: pulp
+      mode: "0755"
+  loop:
+      - nginx.sh
+  notify: Restart pulp
+
+- name: Apply nginx config template
+  ansible.builtin.template:
+      dest: "{{ pulp_host_dir }}/assets/nginx/nginx.conf.template"
+      src: nginx.conf.template.j2
+      owner: pulp
+      group: pulp
+      mode: "0664"
+  notify: Restart pulp
+
+- name: Apply settings.py template
+  ansible.builtin.template:
+      dest: "{{ pulp_host_dir }}/assets/settings.py"
+      src: settings.py.j2
+      owner: pulp
+      group: pulp
+      mode: "0660"
+  notify: Restart pulp
+
+- name: Ensure quadlet containers directory exists
+  ansible.builtin.file:
+      path: /home/pulp/.config/containers/systemd
+      state: directory
+      owner: pulp
+      group: pulp
+      mode: "0755"
+
+- name: Copy static quadlet files
+  ansible.builtin.copy:
+      dest: "/home/pulp/.config/containers/systemd/{{ item }}"
+      src: "{{ item }}"
+      owner: pulp
+      group: pulp
+      mode: "0644"
+  loop:
+      - pulpnet.network
+      - pulp.target
+  notify:
+      - Reload systemd
+      - Enable pulp units
+      - Restart pulp
+
+- name: Apply quadlet container templates
+  ansible.builtin.template:
+      dest: "/home/pulp/.config/containers/systemd/{{ item }}"
+      src: "{{ item }}.j2"
+      owner: pulp
+      group: pulp
+      mode: "0644"
+  loop:
+      - pulp-migration.container
+      - pulp-signing-key.container
+      - pulp-set-init-password.container
+      - pulp-api@.container
+      - pulp-content@.container
+      - pulp-worker@.container
+      - pulp-web.container
+  notify:
+      - Reload systemd
+      - Enable pulp units
+      - Restart pulp
+
+- name: Ensure user systemd directory exists
+  ansible.builtin.file:
+      path: /home/pulp/.config/systemd/user
+      state: directory
+      owner: pulp
+      group: pulp
+      mode: "0755"
+
+- name: Apply group target templates
+  ansible.builtin.template:
+      dest: "/home/pulp/.config/systemd/user/{{ item }}"
+      src: "{{ item }}.j2"
+      owner: pulp
+      group: pulp
+      mode: "0644"
+  loop:
+      - pulp-apis.target
+      - pulp-contents.target
+      - pulp-workers.target
+  notify:
+      - Reload systemd
+      - Enable pulp units
+      - Restart pulp
+
+- name: Build unit lists from replica counts
+  ansible.builtin.set_fact:
+      all_pulp_units: >-
+          {{
+            ['pulp.target', 'pulp-web.service', 'pulpnet-network.service',
+             'pulp-apis.target', 'pulp-contents.target', 'pulp-workers.target']
+            + (query('sequence', 'start=1 end=' ~ pulp_api_replicas)
+               | map('regex_replace', '^(.*)$', 'pulp-api@\1.service') | list)
+            + (query('sequence', 'start=1 end=' ~ pulp_content_replicas)
+               | map('regex_replace', '^(.*)$', 'pulp-content@\1.service') | list)
+            + (query('sequence', 'start=1 end=' ~ pulp_worker_replicas)
+               | map('regex_replace', '^(.*)$', 'pulp-worker@\1.service') | list)
+          }}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Pulp api target
+After=pulp-set-init-password.service
+Requires=pulp-set-init-password.service
+PartOf=pulp.target
+Wants={% for i in range(1, pulp_api_replicas + 1) -%}
+pulp-api@{{ i }}.service{% if not loop.last %} {% endif %}
+{%- endfor %}
+
+
+[Install]
+WantedBy=pulp.target

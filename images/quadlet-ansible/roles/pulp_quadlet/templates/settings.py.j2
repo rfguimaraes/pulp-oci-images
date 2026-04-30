@@ -1,0 +1,30 @@
+SECRET_KEY = "{{ pulp_secret_key }}"
+CONTENT_ORIGIN = "http://{{ pulp_api_hostname }}:{{ pulp_port }}"
+DATABASES = {
+    "default": {
+        "HOST": "{{ pulp_db_host }}",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "{{ pulp_db_name }}",
+        "USER": "{{ pulp_db_user }}",
+        "PASSWORD": "{{ pulp_db_password }}",
+        "PORT": "5432",
+        "CONN_MAX_AGE": 0,
+        "OPTIONS": {"sslmode": "prefer"},
+    },
+}
+CACHE_ENABLED = True
+REDIS_HOST = "{{ pulp_redis_host }}"
+REDIS_PORT = {{ pulp_redis_port }}
+REDIS_PASSWORD = ""
+ANSIBLE_API_HOSTNAME = "http://pulp_api_{{ inventory_hostname }}:24817"
+ANSIBLE_CONTENT_HOSTNAME = "http://pulp_content_{{ inventory_hostname }}:24816/pulp/content"
+ALLOWED_IMPORT_PATHS = ["/tmp"]
+ALLOWED_EXPORT_PATHS = ["/tmp"]
+TOKEN_SERVER = "http://{{ pulp_api_hostname }}:{{ pulp_port }}/token/"
+TOKEN_AUTH_DISABLED = False
+TOKEN_SIGNATURE_ALGORITHM = "ES256"
+PUBLIC_KEY_PATH = "/etc/pulp/certs/container_auth_public_key.pem"
+PRIVATE_KEY_PATH = "/etc/pulp/certs/container_auth_private_key.pem"
+DATABASES_FIELDS_SYMMETRIC_KEY = "/etc/pulp/certs/database_fields.symmetric.key"
+ANALYTICS = False
+STATIC_ROOT = "/var/lib/operator/static/"

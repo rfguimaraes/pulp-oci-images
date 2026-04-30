@@ -1,0 +1,28 @@
+[Unit]
+Description=Pulp Web
+PartOf=pulp.target
+After=pulp-set-init-password.service
+After=pulp-api@1.service pulp-api@2.service
+After=pulp-content@1.service pulp-content@2.service
+Requires=pulp-set-init-password.service
+
+[Service]
+Restart=on-failure
+RestartSec=60s
+
+[Container]
+Image=quay.io/pulp/pulp-web:latest
+User=0
+Exec=/usr/bin/nginx.sh
+LogDriver=journald
+LogOpt=tag={{.Name}}
+PublishPort=8080:8080
+Network=pulpnet.network
+
+# Volumes
+Volume=/home/pulp/pulp/assets/bin/nginx.sh:/usr/bin/nginx.sh:Z
+Volume=/home/pulp/pulp/assets/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:Z
+Volume=/home/pulp/pulp/assets/certs:/etc/pulp/certs:z
+
+[Install]
+WantedBy=pulp.target

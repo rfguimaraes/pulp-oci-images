@@ -1,0 +1,41 @@
+- name: Reload systemd
+  become: true
+  become_user: pulp
+  ansible.builtin.systemd:
+      daemon_reload: true
+      scope: user
+  environment:
+      XDG_RUNTIME_DIR: "/run/user/{{ pulp_uid }}"
+      DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ pulp_uid }}/bus"
+
+- name: Enable pulp units
+  become: true
+  become_user: pulp
+  ansible.builtin.systemd:
+      name: "{{ item }}"
+      enabled: true
+      masked: false
+      scope: user
+  loop: "{{ all_pulp_units }}"
+  environment:
+      XDG_RUNTIME_DIR: "/run/user/{{ pulp_uid }}"
+      DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ pulp_uid }}/bus"
+
+- name: Restart pulp mount
+  ansible.builtin.systemd:
+      name: mnt-pulp.mount
+      state: restarted
+      enabled: true
+      daemon_reload: true
+
+- name: Restart pulp
+  become: true
+  become_user: pulp
+  ansible.builtin.systemd:
+      name: pulp.target
+      state: restarted
+      daemon_reload: true
+      scope: user
+  environment:
+      XDG_RUNTIME_DIR: "/run/user/{{ pulp_uid }}"
+      DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ pulp_uid }}/bus"
