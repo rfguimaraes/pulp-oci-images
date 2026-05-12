@@ -10,7 +10,6 @@ approach lets you:
 - Drive replica counts, image versions, ports, and paths from inventory vars
 - Re-deploy or upgrade by re-running the playbook
 - Manage multiple Pulp hosts from one place
-- Handle GPG fingerprint discovery automatically
 
 ## Role: `pulp_quadlet`
 
@@ -25,8 +24,6 @@ The ones marked **required** have no default and must be provided.
 | `image_source` | `quay.io` | Container registry prefix |
 | `pulp_port` | `8080` | Host port exposed by `pulp-web` |
 | `pulp_host_dir` | `/home/pulp/pulp` | Base directory for settings/assets on host |
-| `pulp_host_nfs_mountpoint` | `/mnt/pulp` | Where NFS (or local) storage is mounted |
-| `pulp_nfs_server` | **required** | NFS server address (`host:/export`) |
 | `pulp_api_hostname` | **required** | Public hostname/IP used in `CONTENT_ORIGIN` |
 | `pulp_db_host` | **required** | PostgreSQL host |
 | `pulp_db_name` | `pulp` | PostgreSQL database name |
@@ -39,23 +36,8 @@ The ones marked **required** have no default and must be provided.
 | `pulp_worker_replicas` | `2` | Number of `pulp-worker@N` instances |
 | `pulp_gunicorn_timeout` | `90` | Gunicorn request timeout (seconds) |
 | `pulp_uid` | `1001` | UID of the `pulp` user on the host |
-| `gpg_home_dir` | `/home/pulp/.gnupg` | GPG home on the host |
-| `container_gpg_dir` | `/mnt/gpg` | GPG home bind-mounted inside containers |
 | `pulp_secret_key` | **required** | Django `SECRET_KEY` |
 | `pulp_admin_password` | **required** | Initial Pulp admin password |
-| `gpg_keys` | `[]` | List of GPG key descriptors (see below) |
-
-#### `gpg_keys` structure
-
-```yaml
-gpg_keys:
-  - prefix: MYREPO
-    email: pulp@example.com
-    service: myrepo-signing-service
-```
-
-The role reads the GPG subkey fingerprint from the host's GPG keyring
-(`gpg_home_dir`) for each entry and passes it into `pulp.env`.
 
 ### Example playbook
 
@@ -65,7 +47,6 @@ The role reads the GPG subkey fingerprint from the host's GPG keyring
     - role: pulp_quadlet
       vars:
         pulp_version: "3.70.0"
-        pulp_nfs_server: "192.168.1.10:/pulp"
         pulp_api_hostname: "pulp.example.com"
         pulp_db_host: "db.example.com"
         pulp_db_password: "{{ vault_pulp_db_password }}"
@@ -74,10 +55,6 @@ The role reads the GPG subkey fingerprint from the host's GPG keyring
         pulp_admin_password: "{{ vault_pulp_admin_password }}"
         pulp_api_replicas: 4
         pulp_worker_replicas: 3
-        gpg_keys:
-          - prefix: STABLE
-            email: pulp@example.com
-            service: stable-signing-service
 ```
 
 ## Comparison with the static approach
@@ -87,6 +64,5 @@ The role reads the GPG subkey fingerprint from the host's GPG keyring
 | Replica count | Edit `Wants=` lines manually | Set `pulp_api_replicas: N` |
 | Image version | Edit each `.container` file | Set `pulp_version: "3.x"` |
 | Multiple hosts | Copy + edit per host | Inventory + group vars |
-| GPG fingerprints | Look up and paste manually | Role discovers them automatically |
 | Upgrades | Edit files + `systemctl daemon-reload` | Re-run the playbook |
 | Simplicity | No Ansible needed | Requires Ansible control node |
