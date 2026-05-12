@@ -164,7 +164,7 @@ sudo -u pulp journalctl --user -fu pulp.target   # follow logs
 vagrant destroy   # tear everything down
 ```
 
-Supports VirtualBox and libvirt providers. Requires Vagrant ≥ 2.3.
+Supports VirtualBox and libvirt providers (`bento/fedora-40` box). Requires Vagrant ≥ 2.3.
 
 ### Manual steps (on an existing Fedora/RHEL host)
 
