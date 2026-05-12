@@ -4,34 +4,6 @@
       msg: "This role only supports RedHat-based systems. Found: {{ ansible_os_family }}"
   when: ansible_os_family != "RedHat"
 
-- name: Install NFS utilities
-  ansible.builtin.dnf:
-      name: nfs-utils
-      state: present
-
-- name: Ensure mountpoint for NFS exists
-  ansible.builtin.file:
-      path: "{{ pulp_host_nfs_mountpoint }}"
-      state: directory
-      owner: pulp
-      group: pulp
-      mode: "2771"
-  notify: Restart pulp mount
-
-- name: Apply systemd NFS mount unit
-  ansible.builtin.template:
-      dest: /etc/systemd/system/mnt-pulp.mount
-      src: pulp-nfs.mount.j2
-      mode: "0644"
-  notify: Restart pulp mount
-
-- name: Ensure NFS mount is active
-  ansible.builtin.systemd:
-      name: mnt-pulp.mount
-      state: started
-      enabled: true
-      daemon_reload: true
-
 - name: Ensure host directories exist
   ansible.builtin.file:
       path: "{{ pulp_host_dir }}/{{ item }}"
@@ -91,6 +63,7 @@
   loop:
       - pulpnet.network
       - pulp.target
+      - pulp.volume
   notify:
       - Reload systemd
       - Enable pulp units

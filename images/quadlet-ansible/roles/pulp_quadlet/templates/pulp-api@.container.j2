@@ -35,7 +35,7 @@ HealthTimeout=5s
 # Volumes
 Volume={{ pulp_host_dir }}/assets/settings.py:/etc/pulp/settings.py:z
 Volume={{ pulp_host_dir }}/assets/certs:/etc/pulp/certs:z
-Volume={{ pulp_host_nfs_mountpoint }}:/var/lib/pulp:z
+Volume=pulp.volume:/var/lib/pulp
 
 [Install]
 WantedBy=pulp-apis.target

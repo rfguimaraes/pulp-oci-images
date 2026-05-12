@@ -21,13 +21,6 @@
       XDG_RUNTIME_DIR: "/run/user/{{ pulp_uid }}"
       DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ pulp_uid }}/bus"
 
-- name: Restart pulp mount
-  ansible.builtin.systemd:
-      name: mnt-pulp.mount
-      state: restarted
-      enabled: true
-      daemon_reload: true
-
 - name: Restart pulp
   become: true
   become_user: pulp

@@ -2,7 +2,6 @@ pulp_version: latest
 image_source: quay.io
 pulp_port: 8080
 pulp_host_dir: /home/pulp/pulp
-pulp_host_nfs_mountpoint: /mnt/pulp
 
 pulp_api_replicas: 2
 pulp_content_replicas: 2
