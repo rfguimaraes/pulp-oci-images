@@ -62,7 +62,6 @@
       mode: "0644"
   loop:
       - pulpnet.network
-      - pulp.target
       - pulp.volume
   notify:
       - Reload systemd
@@ -96,6 +95,18 @@
       owner: pulp
       group: pulp
       mode: "0755"
+
+- name: Copy pulp.target to user systemd directory
+  ansible.builtin.copy:
+      dest: "/home/pulp/.config/systemd/user/pulp.target"
+      src: "pulp.target"
+      owner: pulp
+      group: pulp
+      mode: "0644"
+  notify:
+      - Reload systemd
+      - Enable pulp units
+      - Restart pulp
 
 - name: Apply group target templates
   ansible.builtin.template:
